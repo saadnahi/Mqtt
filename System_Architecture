@@ -1,0 +1,42 @@
++--------------------------------+                         
+|         MQTT Client Manager    |
+|--------------------------------|
+| - Manages multiple servers     |
+| - Coordinates subscriptions    |
+| - Handles decoding             |
++---------------+----------------+
+                |
+                |
++---------------+----------------+
+|          Server Manager        |
+|--------------------------------|
+| - Connects/disconnects to/from |
+|   MQTT servers                 |
+| - Manages server parameters    |
++---------------+----------------+
+                |
+                |
++---------------+----------------+
+|          Topic Manager         |
+|--------------------------------|
+| - Adds/removes topics          |
+| - Associates topics with       |
+|   servers                      |
++---------------+----------------+
+                |
+                |
++---------------+----------------+
+|        Decoder Manager         |
+|--------------------------------|
+| - Adds/removes decoders        |
+| - Decodes messages based on    |
+|   topics                       |
++---------------+----------------+
+                |
+                |
++---------------+----------------+
+|        Database Manager        |
+|--------------------------------|
+| - Manages database operations  |
+| - Uses SQLAlchemy              |
++---------------+----------------+

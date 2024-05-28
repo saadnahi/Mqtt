@@ -1,0 +1,26 @@
++--------------------------+                   
+|      Servers             |
+|--------------------------|
+| id         INTEGER       |  PK
+| address    STRING        |
+| port       INTEGER       |
+| username   STRING        |
+| password   STRING        |
+| client_id  STRING        |
++--------------------------+
+
++--------------------------+
+|      Topics              |
+|--------------------------|
+| id               INTEGER |  PK
+| server_id        INTEGER |  FK (Servers.id)
+| topic_name       STRING  |
++--------------------------+
+
++--------------------------+
+|      Decoders            |
+|--------------------------|
+| id               INTEGER |  PK
+| topic_id         INTEGER |  FK (Topics.id)
+| decoder_function STRING  |
++--------------------------+
