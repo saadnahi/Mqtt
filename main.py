@@ -4,28 +4,31 @@ from topic_manager import TopicManager
 from decoder_manager import DecoderManager
 import logging
 
+# Configure logging.
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def main():
     try:
+        # Create instances of the manager classes.
         client_manager = MQTTClientManager()
         topic_manager = TopicManager()
         decoder_manager = DecoderManager()
 
-        # Example server configuration
+        # Example server configuration.
         server_config = {
-            'address': 'mqtt.example.com',
-            'port': 1883,
-            'username': 'user',
-            'password': 'pass',
-            'client_id': 'client1'
+        'address': 'eu1.cloud.thethings.network',
+        'port': 1883,
+        'username': 'soil-devices@ttn',
+        'password': 'NNSXS.GHIOPEDQOOUFUFK5W2NLKYVIRJSUJR57DDCYUUQ.XLPL6YUEDFX7LH6KJX2DZLVJSE6S7EG62FFWKL4VSIRUBQ7W464A',
+        'client_id': 'soil-devices'
         }
 
+        # Add the server configuration to the client manager.
         client_manager.add_server(server_config)
         logger.info("Server added successfully")
 
-        # Example topic and decoder addition
+        # Example topic and decoder addition.
         topic_manager.add_topic(1, 'example/topic')
         decoder_function = '''
         def decode(payload):
@@ -34,7 +37,7 @@ def main():
         decoder_manager.add_decoder('example/topic', decoder_function)
         logger.info("Topic and decoder added successfully")
 
-        # Connect to the server and subscribe to topics
+        # Connect to the server and subscribe to topics.
         server = client_manager.get_server(1)
         server_manager = ServerManager(
             server.address, server.port, server.username, server.password, server.client_id
@@ -42,12 +45,13 @@ def main():
         server_manager.connect()
         logger.info("Connected to the server")
 
+        # Subscribe to the topics associated with the server.
         topics = topic_manager.get_topics(1)
         for topic in topics:
             server_manager.subscribe(topic)
             logger.info(f"Subscribed to topic: {topic}")
 
-        # Example payload decoding
+        # Example payload decoding.
         payload = b'example payload'
         decoded_payload = decoder_manager.decode('example/topic', payload)
         logger.info(f"Decoded payload: {decoded_payload}")
