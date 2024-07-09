@@ -1,10 +1,15 @@
 import paho.mqtt.client as mqtt
-from models import Session, Topic, Decoder
 import logging
+
+logger = logging.getLogger(__name__)
 
 class ServerManager:
     def __init__(self, config):
         self.client_id = config['client_id']
+        self.address = config['address']
+        self.port = config['port']
+        self.username = config['username']
+        self.password = config['password']
         self.config = config
         self.client = mqtt.Client(client_id=config['client_id'])
         self.client.username_pw_set(config['username'], config['password'])
@@ -15,53 +20,50 @@ class ServerManager:
         self.decoders = {}
 
     def connect(self):
-        self.client.connect(self.config['address'], self.config['port'])
-        self.client.loop_start()
+        try:
+            self.client.connect(self.address, self.port)
+            self.client.loop_start()
+        except Exception as e:
+            logger.error(f"Failed to connect to MQTT server: {e}")
+            raise
 
     def disconnect(self):
-        self.client.loop_stop()
-        self.client.disconnect()
+        try:
+            self.client.loop_stop()
+            self.client.disconnect()
+        except Exception as e:
+            logger.error(f"Failed to disconnect from MQTT server: {e}")
 
     def subscribe(self, topic):
-        self.client.subscribe(topic)
-        self.topics[topic] = None
-        # Add topic to the database
-        session = Session()
-        db_topic = Topic(server_id=self.client_id, topic_name=topic)
-        session.add(db_topic)
-        session.commit()
+        try:
+            self.client.subscribe(topic)
+            self.topics[topic] = None
+        except Exception as e:
+            logger.error(f"Failed to subscribe to topic {topic}: {e}")
 
     def unsubscribe(self, topic):
-        self.client.unsubscribe(topic)
-        if topic in self.topics:
-            del self.topics[topic]
-        # Remove topic from the database
-        session = Session()
-        db_topic = session.query(Topic).filter_by(topic_name=topic).first()
-        if db_topic:
-            session.delete(db_topic)
-            session.commit()
+        try:
+            self.client.unsubscribe(topic)
+            if topic in self.topics:
+                del self.topics[topic]
+        except Exception as e:
+            logger.error(f"Failed to unsubscribe from topic {topic}: {e}")
 
     def on_connect(self, client, userdata, flags, rc):
-        logging.info(f"Connected to {self.config['address']} with result code {rc}")
+        logger.info(f"Connected to {client._host} with result code {rc}")
 
     def on_disconnect(self, client, userdata, rc):
-        logging.info(f"Disconnected from {self.config['address']}")
+        logger.info(f"Disconnected from {client._host}")
 
     def on_message(self, client, userdata, msg):
         topic = msg.topic
         payload = msg.payload
         if topic in self.decoders:
-            self.decoders[topic](payload)
+            try:
+                self.decoders[topic](payload)
+            except Exception as e:
+                logger.error(f"Failed to decode message on topic {topic}: {e}")
         else:
-            logging.warning(f"No decoder for topic: {topic}")
+            logger.warning(f"No decoder for topic: {topic}")
 
-    def add_decoder(self, topic, decoder_function):
-        self.decoders[topic] = decoder_function
-        # Add decoder to the database
-        session = Session()
-        db_topic = session.query(Topic).filter_by(topic_name=topic).first()
-        if db_topic:
-            db_decoder = Decoder(topic_id=db_topic.id, decoder_function=decoder_function)
-            session.add(db_decoder)
-            session.commit()
+   

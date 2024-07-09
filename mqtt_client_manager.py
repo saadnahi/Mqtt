@@ -1,37 +1,53 @@
-import paho.mqtt.client as mqtt
-from models import Session, Server
+from database_manager import DatabaseManager
+from server_manager import ServerManager
+import logging
+
+logger = logging.getLogger(__name__)
 
 class MQTTClientManager:
     def __init__(self):
-        self.servers = []
+        self.servers = {}
+        self.db_manager = DatabaseManager()
 
     def add_server(self, server_config):
-        server = mqtt.Client(client_id=server_config['client_id'])
-        server.username_pw_set(server_config['username'], server_config['password'])
-        server.connect(server_config['address'], server_config['port'])
-        self.servers.append(server)
-
-        # Add server to the database
-        session = Session()
-        new_server = Server(
-            address=server_config['address'],
-            port=server_config['port'],
-            username=server_config['username'],
-            password=server_config['password'],
-            client_id=server_config['client_id']
-        )
-        session.add(new_server)
-        session.commit()
+        address = server_config['address']
+        if address not in self.servers:
+            try:
+                server_id = self.db_manager.add_server(server_config)
+                server = ServerManager(server_config)
+                server.connect()
+                self.servers[address] = server
+                logger.info(f"Connected to server at {address}, Server ID: {server_id}")
+            except Exception as e:
+                logger.error(f"Failed to connect to server at {address}: {e}")
+        else:
+            logger.warning(f"Server with address {address} already exists.")
 
     def remove_server(self, server_id):
-        # Remove server from the list and the database
-        session = Session()
-        server = session.query(Server).filter_by(id=server_id).first()
-        if server:
-            self.servers = [s for s in self.servers if s._client_id != server.client_id]
-            session.delete(server)
-            session.commit()
+        try:
+            server = self.db_manager.get_server(server_id)
+            if server:
+                address = server.address
+                if address in self.servers:
+                    mqtt_server = self.servers.pop(address)
+                    mqtt_server.disconnect()
+                    logger.info(f"Disconnected and removed server at {address}")
+                    self.db_manager.remove_server(server_id)
+                else:
+                    logger.warning(f"Server with address {address} not found in local cache.")
+            else:
+                logger.error(f"No server found with ID: {server_id}")
+        except Exception as e:
+            logger.error(f"Error removing server: {e}")
 
     def get_server(self, server_id):
-        session = Session()
-        return session.query(Server).filter_by(id=server_id).first()
+        try:
+            server = self.db_manager.get_server(server_id)
+            if server:
+                logger.info(f"Retrieved server from database: {server}")
+            else:
+                logger.error(f"No server found with ID: {server_id}")
+            return server
+        except Exception as e:
+            logger.error(f"Error retrieving server: {e}")
+            return None

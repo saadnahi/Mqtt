@@ -1,13 +1,44 @@
+from database_manager import DatabaseManager
+import logging
+
+logger = logging.getLogger(__name__)
+
 class TopicManager:
     def __init__(self):
-        self.topics = {}
+        self.topics = {}  # Dictionary to store topics and associated servers
+        self.db_manager = DatabaseManager()
 
     def add_topic(self, server_id, topic):
-        self.topics[topic] = server_id
+        try:
+            # Add topic subscription to the database
+            topic_id = self.db_manager.add_topic(server_id, topic)
+            self.topics[topic] = server_id  # Update local topics dictionary
+            logger.info(f"Added topic {topic} for server ID {server_id} to the database, Topic ID: {topic_id}")
+        except Exception as e:
+            logger.error(f"Failed to add topic {topic} for server ID {server_id}: {e}")
 
     def remove_topic(self, topic):
-        if topic in self.topics:
-            del self.topics[topic]
+        try:
+            # Remove topic subscription from the database
+            topic_id = self.db_manager.remove_topic(topic)
+            if topic_id:
+                if topic in self.topics:
+                    del self.topics[topic]  # Remove from local topics dictionary
+                logger.info(f"Removed topic {topic} from the database, Topic ID: {topic_id}")
+            else:
+                logger.warning(f"Topic {topic} not found in the database")
+        except Exception as e:
+            logger.error(f"Failed to remove topic {topic}: {e}")
 
     def get_topics(self, server_id):
-        return [t for t, s_id in self.topics.items() if s_id == server_id]
+        try:
+            # Retrieve topics for a specific server from the database
+            topics = self.db_manager.get_topics(server_id)
+            topic_names = [topic.topic_name for topic in topics]
+            for topic in topic_names:
+                self.topics[topic] = server_id  # Update local topics dictionary
+            logger.info(f"Retrieved topics for server ID {server_id} from the database: {topic_names}")
+            return topic_names
+        except Exception as e:
+            logger.error(f"Failed to get topics for server ID {server_id}: {e}")
+            return []

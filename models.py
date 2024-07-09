@@ -33,4 +33,4 @@ Topic.decoders = relationship("Decoder", order_by=Decoder.id, back_populates="to
 
 engine = create_engine('sqlite:///mqtt_client.db')
 Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
+Session = sessionmaker(bind = engine)

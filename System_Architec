@@ -3,7 +3,6 @@
 |--------------------------------|
 | - Manages multiple servers     |
 | - Coordinates subscriptions    |
-| - Handles decoding             |
 +---------------+----------------+
                 |
                 |
@@ -13,6 +12,7 @@
 | - Connects/disconnects to/from |
 |   MQTT servers                 |
 | - Manages server parameters    |
+| - Handles decoding             |
 +---------------+----------------+
                 |
                 |

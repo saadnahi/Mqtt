@@ -1,19 +1,57 @@
-import base64
+from database_manager import DatabaseManager
+import logging
+
+logger = logging.getLogger(__name__)
 
 class DecoderManager:
     def __init__(self):
-        self.decoders = {}
+        self.decoders = {}  # Dictionary to store topics and associated decoder functions
+        self.db_manager = DatabaseManager()
 
     def add_decoder(self, topic, decoder_function):
-        self.decoders[topic] = base64.b64encode(decoder_function.encode('utf-8'))
+        try:
+            # Add decoder function to local dictionary
+            self.decoders[topic] = decoder_function
+            logger.info(f"Added decoder function for topic {topic}")
+
+            # Add decoder function to the database
+            topic_id = self.db_manager.add_decoder(topic, decoder_function.__name__)
+            logger.info(f"Added decoder function for topic {topic} to the database, Decoder ID: {topic_id}")
+        except Exception as e:
+            logger.error(f"Failed to add decoder function for topic {topic}: {e}")
 
     def remove_decoder(self, topic):
-        if topic in self.decoders:
-            del self.decoders[topic]
+        try:
+            # Remove decoder function from local dictionary
+            if topic in self.decoders:
+                del self.decoders[topic]
+                logger.info(f"Removed decoder function for topic {topic}")
+
+            # Remove decoder function from the database
+            decoders = self.db_manager.get_decoders()
+            decoder_id = None
+            for d in decoders:
+                if d.topic == topic:
+                    decoder_id = d.id
+                    break
+            if decoder_id:
+                self.db_manager.remove_decoder(decoder_id)
+                logger.info(f"Removed decoder function for topic {topic} from the database, Decoder ID: {decoder_id}")
+            else:
+                logger.warning(f"Decoder function for topic {topic} not found in the database")
+        except Exception as e:
+            logger.error(f"Failed to remove decoder function for topic {topic}: {e}")
 
     def decode(self, topic, payload):
-        if topic in self.decoders:
-            decoder_function = base64.b64decode(self.decoders[topic]).decode('utf-8')
-            exec(decoder_function)
-            return locals()['decode'](payload)
-        return payload
+        try:
+            # Retrieve decoder function from local dictionary
+            if topic in self.decoders:
+                decoder_function = self.decoders[topic]
+                logger.info(f"Decoding message on topic {topic} using decoder function {decoder_function.__name__}")
+                return decoder_function(payload)
+            else:
+                logger.warning(f"No decoder function found for topic {topic}")
+                return None
+        except Exception as e:
+            logger.error(f"Failed to decode message on topic {topic}: {e}")
+            return None
