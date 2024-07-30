@@ -1,8 +1,7 @@
-
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
+# Update to use sqlalchemy.orm.declarative_base
 Base = declarative_base()
 
 class Server(Base):
@@ -12,7 +11,7 @@ class Server(Base):
     port = Column(Integer)
     username = Column(String)
     password = Column(String)
-    client_id = Column(String)
+    project_id = Column(String)
 
 class Topic(Base):
     __tablename__ = 'topics'
@@ -33,4 +32,4 @@ Topic.decoders = relationship("Decoder", order_by=Decoder.id, back_populates="to
 
 engine = create_engine('sqlite:///mqtt_client.db')
 Base.metadata.create_all(engine)
-Session = sessionmaker(bind = engine)
+Session = sessionmaker(bind=engine)

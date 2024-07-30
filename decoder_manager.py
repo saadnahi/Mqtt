@@ -1,5 +1,6 @@
 from database_manager import DatabaseManager
 import logging
+import json 
 
 logger = logging.getLogger(__name__)
 
@@ -10,13 +11,10 @@ class DecoderManager:
 
     def add_decoder(self, topic, decoder_function):
         try:
-            # Add decoder function to local dictionary
             self.decoders[topic] = decoder_function
-            logger.info(f"Added decoder function for topic {topic}")
+            logger.info(f"Added decoder function for topic {topic} to the dic")
 
-            # Add decoder function to the database
-            topic_id = self.db_manager.add_decoder(topic, decoder_function.__name__)
-            logger.info(f"Added decoder function for topic {topic} to the database, Decoder ID: {topic_id}")
+            self.db_manager.add_decoder(topic, decoder_function)
         except Exception as e:
             logger.error(f"Failed to add decoder function for topic {topic}: {e}")
 
@@ -44,14 +42,48 @@ class DecoderManager:
 
     def decode(self, topic, payload):
         try:
-            # Retrieve decoder function from local dictionary
+            # Check if the decoder function code is already in the local dictionary
             if topic in self.decoders:
-                decoder_function = self.decoders[topic]
-                logger.info(f"Decoding message on topic {topic} using decoder function {decoder_function.__name__}")
+                decoder_function_code = self.decoders[topic]
+            else:
+                # Retrieve the decoder function code from the database
+                decoder_function_code = self.db_manager.get_decoder_by_topic(topic)
+                if decoder_function_code:
+                    # Store the retrieved decoder function code in the local dictionary
+                    self.decoders[topic] = decoder_function_code
+                else:
+                    # Log a warning and return None if no decoder function is found
+                    logger.warning(f"No decoder function found for topic {topic}")
+                    return None
+
+            # Prepare the local execution environment with the json module
+            local_vars = {}
+
+            # Execute the decoder function code
+            exec(decoder_function_code, globals(), local_vars)
+
+            # Retrieve the decode_payload function from the local_vars dictionary
+            decoder_function = local_vars.get('decode_payload')
+
+            if decoder_function:
+                 # Decode the byte payload to a string
+                #payload_str = payload.decode('utf-8')
+                #logger.info(f"Received message on topic {topic}: {payload_str}")
+                # Parse the payload from JSON to a Python dictionary
+                #payload_dict = json.loads(payload_str)
+                
+                # Log the decoding action and call the decoder function with the parsed payload
+                logger.info(f"Decoding message on topic {topic} using retrieved decoder function...")
                 return decoder_function(payload)
             else:
-                logger.warning(f"No decoder function found for topic {topic}")
+                # Log an error if the decode_payload function is not found
+                logger.error(f"Failed to retrieve 'decode_payload' function from the code for topic {topic}")
                 return None
+
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON decode error: {e} - Payload: {payload}")
+            return None
         except Exception as e:
+            # Log any other exceptions that occur during the decoding process
             logger.error(f"Failed to decode message on topic {topic}: {e}")
             return None

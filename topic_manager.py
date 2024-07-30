@@ -11,22 +11,23 @@ class TopicManager:
     def add_topic(self, server_id, topic):
         try:
             # Add topic subscription to the database
-            topic_id = self.db_manager.add_topic(server_id, topic)
+            self.db_manager.add_topic(server_id, topic)
             self.topics[topic] = server_id  # Update local topics dictionary
-            logger.info(f"Added topic {topic} for server ID {server_id} to the database, Topic ID: {topic_id}")
+            logger.info(f"Topic added successfully to the dic")
         except Exception as e:
             logger.error(f"Failed to add topic {topic} for server ID {server_id}: {e}")
 
     def remove_topic(self, topic):
         try:
             # Remove topic subscription from the database
-            topic_id = self.db_manager.remove_topic(topic)
+            topic_id = self.db_manager.get_topic_id_by_name(topic)
             if topic_id:
+                self.db_manager.remove_topic(topic_id)
                 if topic in self.topics:
-                    del self.topics[topic]  # Remove from local topics dictionary
-                logger.info(f"Removed topic {topic} from the database, Topic ID: {topic_id}")
+                    del self.topics[topic]     # Remove from local topics dictionary
+                logger.info(f"Removed topic {topic} from the database")
             else:
-                logger.warning(f"Topic {topic} not found in the database")
+                logger.warning(f"Topic {topic} not found")
         except Exception as e:
             logger.error(f"Failed to remove topic {topic}: {e}")
 

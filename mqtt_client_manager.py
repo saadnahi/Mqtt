@@ -28,13 +28,10 @@ class MQTTClientManager:
             server = self.db_manager.get_server(server_id)
             if server:
                 address = server.address
-                if address in self.servers:
-                    mqtt_server = self.servers.pop(address)
-                    mqtt_server.disconnect()
-                    logger.info(f"Disconnected and removed server at {address}")
-                    self.db_manager.remove_server(server_id)
-                else:
-                    logger.warning(f"Server with address {address} not found in local cache.")
+                mqtt_server = ServerManager(address)
+                mqtt_server.disconnect()
+                logger.info(f"Disconnected and removed server at {address}")
+                self.db_manager.remove_server(server_id)
             else:
                 logger.error(f"No server found with ID: {server_id}")
         except Exception as e:
@@ -44,10 +41,9 @@ class MQTTClientManager:
         try:
             server = self.db_manager.get_server(server_id)
             if server:
-                logger.info(f"Retrieved server from database: {server}")
+                return server
             else:
                 logger.error(f"No server found with ID: {server_id}")
-            return server
         except Exception as e:
             logger.error(f"Error retrieving server: {e}")
             return None
