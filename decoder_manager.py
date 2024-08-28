@@ -26,7 +26,7 @@ class DecoderManager:
                 logger.info(f"Removed decoder function for topic {topic}")
 
             # Remove decoder function from the database
-            decoders = self.db_manager.get_decoders()
+            decoders = self.db_manager.get_decoder_by_topic(topic)
             decoder_id = None
             for d in decoders:
                 if d.topic == topic:

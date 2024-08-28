@@ -47,13 +47,13 @@ def main():
         topic_manager = TopicManager()
         decoder_manager = DecoderManager()
 
-        # Example server configuration.
+        # Server configuration.
         server_config = {
             'address': 'eu1.cloud.thethings.network',
             'port': 1883,
             'username': 'soil-devices@ttn',
             'password': 'NNSXS.3VXRVN56FRYZX75WFGW3WLRPRAURNQN6HL6GGSI.NW2XJVTXYLVD3HEYN2P4E2WIHXJYWD7TZJYZA45QMHK5BXXDO5SA',
-            'project_id': 'soil-devices' #project id
+            'project_id': 'soil-devices' 
         }
 
         # Add the server configuration to the client manager.
@@ -85,12 +85,11 @@ def main():
             # Keep the main thread alive
             logger.info("Listening for messages... ")
             try:
-                 while True:
-                    time.sleep(10)  # Sleep to keep the script running
+                while True:
+                    time.sleep(1)  
                     #pass
             except KeyboardInterrupt:
                 server_manager.disconnect()
-
         else:
             logger.error("Server not found.")
 

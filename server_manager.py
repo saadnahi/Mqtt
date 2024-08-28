@@ -17,14 +17,13 @@ class ServerManager:
 
         self.client = mqtt.Client()
         self.client.username_pw_set(config['username'], config['password'])
-        self.client.on_message = self.on_message
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
+        self.client.on_message = self.on_message
         self.decoder_manager = DecoderManager()
 
         self.message_count = 0  # Counter for received messages
     
-
     def connect(self):
         try:
             self.client.connect(self.address, self.port)
@@ -56,7 +55,7 @@ class ServerManager:
 
     def on_connect(self, client, userdata, flags, rc):
         logger.info("Connected to MQTT server")
-
+        
     def on_disconnect(self, client, userdata, rc):
         logger.info("Disconnected from MQTT server")
 
@@ -76,8 +75,8 @@ class ServerManager:
                 logger.info(f"Decoded data for topic {topic}:\n{table}")
             # Increment the message count
             self.message_count += 1
-            if self.message_count >= 5:
-                logger.info("Received 5 messages. Disconnecting...")
+            if self.message_count >= 3:
+                logger.info("Received 3 messages. Disconnecting...")
                 self.disconnect()
         except json.JSONDecodeError as e:
             logger.error(f"JSON decode error: {e} - Payload: {payload}")

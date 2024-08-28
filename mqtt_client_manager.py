@@ -14,12 +14,11 @@ class MQTTClientManager:
         if address not in self.servers:
             try:
                 server_id = self.db_manager.add_server(server_config)
-                server = ServerManager(server_config)
-                server.connect()
-                self.servers[address] = server
-                logger.info(f"Connected to server at {address}, Server ID: {server_id}")
+                # Instantiate ServerManager and store it
+                self.servers[address] = ServerManager(server_config)
+                logger.info(f"Server with address {address} and ID: {server_id} added")
             except Exception as e:
-                logger.error(f"Failed to connect to server at {address}: {e}")
+                logger.error(f"Failed to add the server at {address}: {e}")
         else:
             logger.warning(f"Server with address {address} already exists.")
 
@@ -28,10 +27,11 @@ class MQTTClientManager:
             server = self.db_manager.get_server(server_id)
             if server:
                 address = server.address
-                mqtt_server = ServerManager(address)
-                mqtt_server.disconnect()
-                logger.info(f"Disconnected and removed server at {address}")
+                # Ensure the server is removed from both DB and the in-memory dictionary
+                if address in self.servers:
+                    del self.servers[address]
                 self.db_manager.remove_server(server_id)
+                logger.info(f"Removed server at {address}")
             else:
                 logger.error(f"No server found with ID: {server_id}")
         except Exception as e:
@@ -44,6 +44,7 @@ class MQTTClientManager:
                 return server
             else:
                 logger.error(f"No server found with ID: {server_id}")
+                return None  
         except Exception as e:
             logger.error(f"Error retrieving server: {e}")
-            return None
+            return None  
